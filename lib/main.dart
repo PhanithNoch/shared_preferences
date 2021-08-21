@@ -18,7 +18,6 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-
 class HomeScreen extends StatefulWidget {
   @override
   _HomeScreenState createState() => _HomeScreenState();
@@ -27,18 +26,24 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   TextEditingController textEditingController = TextEditingController();
   List<String>? todo;
+  bool isUpdate = false;
+  int currentIndex = -1;
   // save todo
   saveTODO() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    List<String> lstTodo = [];
-    if(todo != null){
-      lstTodo.addAll(todo!);
+    if(isUpdate && currentIndex != -1){
+      updateTODO();
     }
-    lstTodo.add(textEditingController.text);
-    prefs.setStringList('rean_it_todo', lstTodo);
+    else{
+      List<String> lstTodo = [];
+      if(todo != null){
+        lstTodo.addAll(todo!);
+      }
+      lstTodo.add(textEditingController.text);
+      prefs.setStringList('rean_it_todo', lstTodo);
+    }
     clearTextField();
     getTODO();
-
   }
   getTODO() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -49,11 +54,34 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     });
   }
+  // remove todo
+  removeTODO(int index) async {
+    this.todo!.removeAt(index);
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    List<String> lstTodo = [];
+    if(todo != null){
+      lstTodo.addAll(todo!);
+    }
+    prefs.setStringList('rean_it_todo', lstTodo);
+    getTODO();
+  }
+  //when user tapped on item show todo into textfield
+  // declare a variable isUpdate
+  // if isUpdate = true
 
+  updateTODO() async {
+    String text = textEditingController.text;
+    print("print value get from textfield $text");
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    this.todo![currentIndex] = text;
+    prefs.setStringList('rean_it_todo', todo!);
+    // clearTextField();
+    this.currentIndex = -1;
+    this.isUpdate = false;
+  }
   clearTextField(){
     textEditingController.text = '';
   }
-
   @override
   void initState() {
     // TODO: implement initState
@@ -94,9 +122,22 @@ class _HomeScreenState extends State<HomeScreen> {
              child:  ListView.builder(
                itemCount: todo == null ? 0 :  todo!.length,
                itemBuilder: (context,index){
-                 return Card(
-                   child: ListTile(
-                     title: Text(todo![index]),
+                 return GestureDetector(
+                   onTap: (){
+                     textEditingController.text = todo![index];
+                     this.currentIndex = index;
+                     this.isUpdate = true;
+
+                   },
+                   child: Card(
+                     child: ListTile(
+                       title: Text(todo![index]),
+                       trailing: IconButton(icon: Icon(Icons.delete,color: Colors.red,),
+                         onPressed: (){
+                           removeTODO(index);
+                       },
+                       ),
+                     ),
                    ),
                  );
                },
